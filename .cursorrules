@@ -1,0 +1,66 @@
+# Reglas de Desarrollo para Sistema de Gestión de Vacaciones
+
+## Arquitectura Domain-Driven Design (DDD)
+
+- Organizar el código por dominios de negocio (Vacaciones, Usuarios, Calendario)
+- Implementar una capa de dominio con entidades y objetos de valor
+- Enfocarse en el modelo de dominio como núcleo de la aplicación
+- Utilizar repositorios simples para el acceso a datos
+- Aplicar principios de inmutabilidad para los objetos de dominio
+- Usar un lenguaje ubicuo en todo el código (mismo vocabulario que el negocio)
+
+## Estructura de Directorios
+
+- `/src/domain` - Entidades y objetos de valor
+- `/src/services` - Servicios de aplicación y lógica de negocio
+- `/src/repositories` - Acceso a datos
+- `/src/components` - Componentes UI de Astro/React
+- `/src/pages` - Rutas y páginas de Astro
+
+## Estructura de Código
+
+- Utilizar arquitectura basada en Astro + islas de React para componentes interactivos
+- Mantener componentes pequeños y reutilizables (máximo 250 líneas por archivo)
+- Implementar tipado estricto (TypeScript) con interfaces explícitas
+- Seguir un patrón consistente para nombrar archivos:
+  - Entidades: `[nombre].entity.ts`
+  - Repositorios: `[nombre].repository.ts`
+  - Servicios: `[nombre].service.ts`
+  - Componentes: `[Nombre]Component.astro` o `[Nombre]Component.tsx`
+
+## Estilo de Código
+
+- Indentación con 2 espacios
+- Utilizar punto y coma al final de las sentencias
+- Usar comillas simples para strings
+- Mantener longitud de línea máxima de 100 caracteres
+- Nombres de:
+  - Clases y componentes: PascalCase
+  - Funciones, métodos y variables: camelCase
+  - Interfaces: PascalCase con prefijo 'I' (ej. IUser)
+  - Tipos: PascalCase
+
+## Implementación del Calendario
+
+- Desarrollar un calendario personalizado sin bibliotecas externas
+- Mantener la funcionalidad del calendario simple (visualización sin interacción directa)
+- Implementar el modal de solicitud de vacaciones como componente separado
+- Usar código de colores consistente para diferentes estados:
+  - Vacaciones aprobadas: Verde
+  - Vacaciones pendientes: Amarillo
+  - Días festivos: Azul
+  - Días no laborables: Gris
+
+## Base de Datos
+
+- Mantener esquemas de datos simples y bien documentados
+- Implementar validación adecuada para todas las entradas
+- Utilizar el patrón Repository para acceso a datos
+
+## UI/UX
+
+- Mantener una interfaz limpia y minimalista
+- Asegurar que todas las funcionalidades son accesibles (WCAG 2.1 AA)
+- Implementar diseño responsive para todas las pantallas
+- Mantener feedback visual para todas las acciones del usuario
+- Usar componentes interactivos solo donde sea necesario (islas)
