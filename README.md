@@ -41,6 +41,7 @@ Sistema de calendario para controlar las vacaciones de los trabajadores de la em
 ### Stack Tecnológico
 
 - **Framework**: Astro con islas de interactividad
+- **Gestión de paquetes**: pnpm
 - **Componentes Reactivos**: Utilizaremos islas reactivas para:
   - Modal de solicitud de vacaciones
   - Formularios de administración
@@ -58,7 +59,7 @@ Sistema de calendario para controlar las vacaciones de los trabajadores de la em
 
 ## Próximos pasos
 
-1. Configuración inicial del proyecto con Astro
+1. Configuración inicial del proyecto con Astro y pnpm
 2. Definición de modelos de datos
 3. Implementación de autenticación
 4. Desarrollo del componente de calendario

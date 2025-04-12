@@ -27,6 +27,7 @@
   - Repositorios: `[nombre].repository.ts`
   - Servicios: `[nombre].service.ts`
   - Componentes: `[Nombre]Component.astro` o `[Nombre]Component.tsx`
+- No utilizar comentarios en el código - el código debe ser autoexplicativo
 
 ## Estilo de Código
 
