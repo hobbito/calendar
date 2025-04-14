@@ -1,9 +1,5 @@
 {
-  "installCommand": "pnpm install",
-  "buildCommand": "pnpm run build",
   "framework": "astro",
-  "outputDirectory": "dist",
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/api/entry.js" }
-  ]
+    "installCommand": "pnpm install",
+    "buildCommand": "pnpm run build"
 } 
