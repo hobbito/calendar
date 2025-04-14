@@ -1,0 +1,686 @@
+---
+import Button from "../ui/Button.astro";
+import calendarService from "../../services/calendar.service";
+
+const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+// Get current month calendar data
+const today = new Date();
+const currentMonth = today.toLocaleString("default", { month: "long" });
+const currentYear = today.getFullYear();
+
+// Get days for the current month - will be loaded dynamically via JS
+const days = calendarService.getDaysInMonth(
+  today.getFullYear(),
+  today.getMonth()
+);
+
+// Type-safe background color mapping for special day types
+const dayTypeBackgrounds: Record<string, string> = {
+  holiday: "bg-status-holiday-light border-status-holiday/20",
+  nonworking: "bg-gray-50/70",
+};
+
+// Get unique people for filter
+const allPeople = new Set<string>();
+days.forEach((day) => {
+  day.events.forEach((event) => {
+    if (event.user) {
+      allPeople.add(event.user);
+    }
+  });
+});
+const peopleList = Array.from(allPeople).sort();
+---
+
+<div class="h-full flex flex-col flex-1">
+  <div class="overflow-hidden flex-1 flex flex-col">
+    <div
+      class="flex items-center justify-between px-5 py-4 sm:px-6 border-b border-gray-100 bg-white"
+    >
+      <h2 class="text-xl font-bold text-gray-800 flex items-center">
+        <span
+          aria-live="polite"
+          id="current-month-display"
+          class="bg-gradient-to-r from-primary-600 to-primary-500 bg-clip-text text-transparent"
+        >
+          {currentMonth}
+          <span id="current-year-display" class="text-gray-500"
+            >{currentYear}</span
+          >
+        </span>
+      </h2>
+      <div class="flex gap-2 items-center">
+        <div class="flex items-center">
+          <label for="person-filter" class="mr-2 text-sm text-gray-600"
+            >Filter:</label
+          >
+          <select
+            id="person-filter"
+            class="text-sm border border-gray-200 rounded-md px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+          >
+            <option value="">All team members</option>
+            {
+              peopleList.map((person) => (
+                <option value={person}>{person}</option>
+              ))
+            }
+          </select>
+          <span id="filter-stats" class="ml-2 text-xs text-gray-500 hidden">
+            <span id="visible-events-count">0</span> events
+          </span>
+        </div>
+        <div
+          class="flex rounded-lg overflow-hidden"
+          role="group"
+          aria-label="Month navigation"
+        >
+          <Button
+            variant="ghost"
+            size="sm"
+            class="rounded-r-none border-r border-gray-100 bg-white hover:bg-gray-50"
+            aria-label="Previous month"
+            id="prev-month-btn"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-4 w-4"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                clip-rule="evenodd"></path>
+            </svg>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            class="rounded-l-none bg-white hover:bg-gray-50"
+            aria-label="Next month"
+            id="next-month-btn"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-4 w-4"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                clip-rule="evenodd"></path>
+            </svg>
+          </Button>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          class="bg-white hover:bg-gray-50 text-primary-600 border-gray-100"
+          id="today-btn"
+        >
+          Today
+        </Button>
+      </div>
+    </div>
+
+    <div
+      class="flex-1 grid grid-cols-7 grid-rows-[auto_1fr] min-h-0"
+      role="table"
+      aria-label="Calendar for {currentMonth} {currentYear}"
+      id="calendar-grid"
+    >
+      <div class="contents" role="row">
+        {
+          daysOfWeek.map((day) => (
+            <div
+              class="px-2 py-3 bg-gray-50/70 text-center text-xs font-medium uppercase tracking-wide text-gray-500 border-b border-gray-100"
+              role="columnheader"
+            >
+              {day}
+            </div>
+          ))
+        }
+      </div>
+
+      <div class="contents" id="calendar-days">
+        {
+          days.map((day) => {
+            let bgColor = "bg-white";
+            let textColor = "text-gray-700";
+            let todayClasses = "";
+            let holidayClasses = "";
+
+            if (day.isToday) {
+              todayClasses = "ring-2 ring-gray-200 ring-inset relative";
+            }
+
+            // Set background color based on day type (only for holidays and weekends)
+            if (day.type === "empty") {
+              bgColor = "bg-gray-50/70";
+              textColor = "text-gray-400";
+            } else if (day.type === "nonworking") {
+              bgColor = dayTypeBackgrounds.nonworking;
+              textColor = "text-gray-500";
+            } else if (day.type === "holiday") {
+              bgColor =
+                "bg-status-holiday-light/90 ring-1 ring-gray-200 border-gray-200";
+              holidayClasses = "holiday-style"; // Clase para añadir el patrón con JS
+            }
+
+            const cellDate = day.date.toISOString().split("T")[0];
+
+            // Count event types for indicator dots
+            const hasApproved = day.events.some((e) => e.type === "approved");
+            const hasPending = day.events.some((e) => e.type === "pending");
+            const hasHoliday = day.events.some((e) => e.type === "holiday");
+
+            // Find holiday event to display its name in the cell when hovering
+            const holidayEvent = day.events.find((e) => e.type === "holiday");
+
+            // Get vacation events (approved and pending only) to display as badges
+            const vacationEvents = day.events.filter(
+              (e) => e.type === "approved" || e.type === "pending"
+            );
+
+            return (
+              <div
+                class={`relative min-h-[10rem] p-2 border-b border-r border-gray-100 ${bgColor} ${todayClasses} focus-within:z-10 ${holidayClasses}`}
+                role="gridcell"
+                tabindex={day.day ? 0 : -1}
+                aria-label={
+                  day.day
+                    ? `${day.day} ${currentMonth}${day.isToday ? ", Today" : ""}${
+                        holidayEvent
+                          ? `, ${holidayEvent.title}: ${holidayEvent.user}`
+                          : ""
+                      }`
+                    : ""
+                }
+                data-date={cellDate}
+              >
+                {day.day && (
+                  <div class="flex flex-col h-full">
+                    <div class="flex justify-between items-start">
+                      <span
+                        class={`inline-flex items-center justify-center w-7 h-7 rounded-full ${
+                          day.isToday ? "bg-stone-600 text-white font-bold" : ""
+                        } ${textColor} ${day.type === "nonworking" ? "font-normal" : "font-medium"}`}
+                      >
+                        {day.day}
+                      </span>
+
+                      {/* Event type indicators */}
+                      {(hasApproved || hasPending || hasHoliday) && (
+                        <div class="flex gap-1">
+                          {hasApproved && (
+                            <span
+                              class="h-3 w-3 rounded-full bg-status-approved"
+                              title="Approved vacation"
+                              aria-hidden="true"
+                            />
+                          )}
+                          {hasPending && (
+                            <span
+                              class="h-3 w-3 rounded-full bg-status-pending"
+                              title="Pending approval"
+                              aria-hidden="true"
+                            />
+                          )}
+                          {hasHoliday && (
+                            <span
+                              class="h-3 w-3 rounded-full bg-status-holiday outline outline-2 outline-gray-300/40"
+                              title="Holiday"
+                              aria-hidden="true"
+                            />
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Display vacation badges - show all events */}
+                    {vacationEvents.length > 0 && (
+                      <div class="mt-1.5 space-y-0.5">
+                        {vacationEvents.map((event) => {
+                          // Determine event continuity based on first/last flags
+                          let eventStyle = "";
+
+                          // Determine colors for the badges
+                          const bgColor =
+                            event.type === "approved"
+                              ? "bg-status-approved-light"
+                              : "bg-status-pending-light";
+
+                          const textColor =
+                            event.type === "approved"
+                              ? "text-status-approved-dark"
+                              : "text-status-pending-dark";
+
+                          const borderColor =
+                            event.type === "approved"
+                              ? "border-status-approved"
+                              : "border-status-pending";
+
+                          // Tailwind classes for event continuity
+                          if (event.isFirst && !event.isLast) {
+                            // Event starts here and continues
+                            eventStyle = "rounded-r-none border-r-0";
+                          } else if (!event.isFirst && event.isLast) {
+                            // Event continues from previous and ends here
+                            eventStyle = "rounded-l-none border-l-0";
+                          } else if (!event.isFirst && !event.isLast) {
+                            // Event continues both ways
+                            eventStyle = "rounded-none border-l-0 border-r-0";
+                          }
+
+                          return (
+                            <div
+                              class={`relative flex items-center ${bgColor} ${textColor} ${borderColor} border-2 text-xs font-medium px-1.5 py-0.5 w-full ${eventStyle}`}
+                              data-event-id={event.eventId}
+                              data-event-user={event.user}
+                            >
+                              <div class="w-full min-w-0 truncate flex items-center">
+                                {event.user}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Add "Today" label for today's cell using Tailwind classes */}
+                    {day.isToday && (
+                      <div class="absolute bottom-1 right-1 text-[10px] uppercase text-gray-400/70 font-semibold tracking-wider pointer-events-none">
+                        Today
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  import calendarService from "../../services/calendar.service";
+
+  document.addEventListener("DOMContentLoaded", setupCalendar);
+  document.addEventListener("astro:page-load", setupCalendar);
+
+  function setupCalendar() {
+    // Variables para almacenar el estado actual del calendario
+    let currentDate = new Date();
+    let currentDisplayMonth = currentDate.getMonth();
+    let currentDisplayYear = currentDate.getFullYear();
+
+    // Elementos DOM
+    const monthDisplay = document.getElementById("current-month-display");
+    const yearDisplay = document.getElementById("current-year-display");
+    const calendarGrid = document.getElementById("calendar-grid");
+    const calendarDays = document.getElementById("calendar-days");
+    const prevMonthBtn = document.getElementById("prev-month-btn");
+    const nextMonthBtn = document.getElementById("next-month-btn");
+    const todayBtn = document.getElementById("today-btn");
+    const personFilter = document.getElementById(
+      "person-filter"
+    ) as HTMLSelectElement;
+    const filterStats = document.getElementById("filter-stats");
+    const visibleEventsCount = document.getElementById("visible-events-count");
+
+    // Inicialización
+    renderCalendar(currentDisplayYear, currentDisplayMonth);
+    setupPersonFilter();
+
+    // Event listeners para los botones de navegación
+    if (prevMonthBtn) {
+      prevMonthBtn.addEventListener("click", goToPrevMonth);
+    }
+
+    if (nextMonthBtn) {
+      nextMonthBtn.addEventListener("click", goToNextMonth);
+    }
+
+    if (todayBtn) {
+      todayBtn.addEventListener("click", goToToday);
+    }
+
+    // Funciones para navegar entre meses
+    function goToPrevMonth() {
+      currentDisplayMonth--;
+      if (currentDisplayMonth < 0) {
+        currentDisplayMonth = 11;
+        currentDisplayYear--;
+      }
+      renderCalendar(currentDisplayYear, currentDisplayMonth);
+    }
+
+    function goToNextMonth() {
+      currentDisplayMonth++;
+      if (currentDisplayMonth > 11) {
+        currentDisplayMonth = 0;
+        currentDisplayYear++;
+      }
+      renderCalendar(currentDisplayYear, currentDisplayMonth);
+    }
+
+    function goToToday() {
+      const today = new Date();
+      currentDisplayMonth = today.getMonth();
+      currentDisplayYear = today.getFullYear();
+      renderCalendar(currentDisplayYear, currentDisplayMonth);
+    }
+
+    // Función para renderizar el calendario
+    function renderCalendar(year, month) {
+      // Actualizar el título del mes y año
+      const dateToDisplay = new Date(year, month, 1);
+      const monthName = dateToDisplay.toLocaleString("default", {
+        month: "long",
+      });
+
+      if (monthDisplay) {
+        // Actualizamos solo el contenido de texto del mes
+        const yearSpan = monthDisplay.querySelector("#current-year-display");
+        if (yearSpan) {
+          // Si el span del año existe, actualizar solo el texto antes del span
+          const monthText = monthDisplay.childNodes[0];
+          if (monthText && monthText.nodeType === Node.TEXT_NODE) {
+            monthText.nodeValue = monthName + " ";
+          } else {
+            // Si no existe el nodo de texto, lo creamos
+            monthDisplay.textContent = "";
+            monthDisplay.appendChild(document.createTextNode(monthName + " "));
+            monthDisplay.appendChild(yearSpan);
+          }
+
+          // Actualizar el año
+          yearSpan.textContent = year.toString();
+        } else {
+          // Si no existe el span del año, recreamos toda la estructura
+          monthDisplay.innerHTML = `${monthName} <span id="current-year-display" class="text-gray-500">${year}</span>`;
+        }
+      }
+
+      // Obtener los días para el mes seleccionado
+      const days = calendarService.getDaysInMonth(year, month);
+
+      // Vaciar el contenedor de días
+      if (calendarDays) {
+        calendarDays.innerHTML = "";
+      }
+
+      // Renderizar los días
+      days.forEach((day) => {
+        let bgColor = "bg-white";
+        let textColor = "text-gray-700";
+        let todayClasses = "";
+        let holidayClasses = "";
+
+        if (day.isToday) {
+          todayClasses = "ring-2 ring-gray-200 ring-inset relative";
+        }
+
+        // Set background color based on day type
+        if (day.type === "empty") {
+          bgColor = "bg-gray-50/70";
+          textColor = "text-gray-400";
+        } else if (day.type === "nonworking") {
+          bgColor = "bg-gray-50/70";
+          textColor = "text-gray-500";
+        } else if (day.type === "holiday") {
+          bgColor =
+            "bg-status-holiday-light/90 ring-1 ring-gray-200 border-gray-200";
+          holidayClasses = "holiday-style";
+        }
+
+        const cellDate = day.date.toISOString().split("T")[0];
+
+        // Count event types for indicator dots
+        const hasApproved = day.events.some((e) => e.type === "approved");
+        const hasPending = day.events.some((e) => e.type === "pending");
+        const hasHoliday = day.events.some((e) => e.type === "holiday");
+
+        // Find holiday event
+        const holidayEvent = day.events.find((e) => e.type === "holiday");
+
+        // Get vacation events
+        const vacationEvents = day.events.filter(
+          (e) => e.type === "approved" || e.type === "pending"
+        );
+
+        // Crear el elemento para el día
+        const dayElement = document.createElement("div");
+        dayElement.className = `relative min-h-[10rem] p-2 border-b border-r border-gray-100 ${bgColor} ${todayClasses} focus-within:z-10 ${holidayClasses}`;
+        dayElement.setAttribute("role", "gridcell");
+        dayElement.setAttribute("tabindex", day.day ? "0" : "-1");
+        dayElement.setAttribute("data-date", cellDate);
+
+        if (day.day) {
+          dayElement.setAttribute(
+            "aria-label",
+            `${day.day} ${monthName}${day.isToday ? ", Today" : ""}${
+              holidayEvent
+                ? `, ${holidayEvent.title}: ${holidayEvent.user}`
+                : ""
+            }`
+          );
+
+          // Contenido interno del día
+          let dayContent = `
+            <div class="flex flex-col h-full">
+              <div class="flex justify-between items-start">
+                <span class="inline-flex items-center justify-center w-7 h-7 rounded-full ${
+                  day.isToday ? "bg-stone-600 text-white font-bold" : ""
+                } ${textColor} ${day.type === "nonworking" ? "font-normal" : "font-medium"}">
+                  ${day.day}
+                </span>
+          `;
+
+          // Indicadores de eventos
+          if (hasApproved || hasPending || hasHoliday) {
+            dayContent += `<div class="flex gap-1">`;
+
+            if (hasApproved) {
+              dayContent += `<span class="h-3 w-3 rounded-full bg-status-approved" title="Approved vacation" aria-hidden="true"></span>`;
+            }
+
+            if (hasPending) {
+              dayContent += `<span class="h-3 w-3 rounded-full bg-status-pending" title="Pending approval" aria-hidden="true"></span>`;
+            }
+
+            if (hasHoliday) {
+              dayContent += `<span class="h-3 w-3 rounded-full bg-status-holiday outline outline-2 outline-gray-300/40" title="Holiday" aria-hidden="true"></span>`;
+            }
+
+            dayContent += `</div>`;
+          }
+
+          dayContent += `</div>`;
+
+          // Eventos de vacaciones
+          if (vacationEvents.length > 0) {
+            dayContent += `<div class="mt-1.5 space-y-0.5">`;
+
+            vacationEvents.forEach((event) => {
+              // Determine event continuity based on first/last flags
+              let eventStyle = "";
+
+              // Determine colors for the badges
+              const eventBgColor =
+                event.type === "approved"
+                  ? "bg-status-approved-light"
+                  : "bg-status-pending-light";
+
+              const eventTextColor =
+                event.type === "approved"
+                  ? "text-status-approved-dark"
+                  : "text-status-pending-dark";
+
+              const eventBorderColor =
+                event.type === "approved"
+                  ? "border-status-approved"
+                  : "border-status-pending";
+
+              // Tailwind classes for event continuity
+              if (event.isFirst && !event.isLast) {
+                // Event starts here and continues
+                eventStyle = "rounded-r-none border-r-0";
+              } else if (!event.isFirst && event.isLast) {
+                // Event continues from previous and ends here
+                eventStyle = "rounded-l-none border-l-0";
+              } else if (!event.isFirst && !event.isLast) {
+                // Event continues both ways
+                eventStyle = "rounded-none border-l-0 border-r-0";
+              }
+
+              dayContent += `
+                <div class="relative flex items-center ${eventBgColor} ${eventTextColor} ${eventBorderColor} border-2 text-xs font-medium px-1.5 py-0.5 w-full ${eventStyle}"
+                  data-event-id="${event.eventId}"
+                  data-event-user="${event.user || ""}">
+                  <div class="w-full min-w-0 truncate flex items-center">
+                    ${event.user || ""}
+                  </div>
+                </div>
+              `;
+            });
+
+            dayContent += `</div>`;
+          }
+
+          // Etiqueta "Today" para el día actual
+          if (day.isToday) {
+            dayContent += `
+              <div class="absolute bottom-1 right-1 text-[10px] uppercase text-gray-400/70 font-semibold tracking-wider pointer-events-none">
+                Today
+              </div>
+            `;
+          }
+
+          dayContent += `</div>`;
+          dayElement.innerHTML = dayContent;
+        }
+
+        // Añadir el día al calendario
+        if (calendarDays) {
+          calendarDays.appendChild(dayElement);
+        }
+      });
+
+      // Aplicar estilo a las celdas de vacaciones
+      document.querySelectorAll(".holiday-style").forEach((cell) => {
+        (cell as HTMLElement).style.backgroundImage =
+          "linear-gradient(45deg, rgba(200, 214, 255, 0.2) 25%, transparent 25%, transparent 50%, rgba(200, 214, 255, 0.2) 50%, rgba(200, 214, 255, 0.2) 75%, transparent 75%, transparent)";
+        (cell as HTMLElement).style.backgroundSize = "8px 8px";
+      });
+
+      // Replicar los filtros
+      if (personFilter && personFilter.value) {
+        applyFilter(personFilter.value);
+      }
+    }
+
+    // Configuración del filtro de personas
+    function setupPersonFilter() {
+      // Initial filter application
+      applyFilter("");
+
+      // Apply filter when selection changes
+      if (personFilter) {
+        personFilter.addEventListener("change", () => {
+          const selectedPerson = personFilter.value;
+          applyFilter(selectedPerson);
+        });
+      }
+    }
+
+    // Function to apply filter and update UI
+    function applyFilter(selectedPerson: string) {
+      const eventElements = document.querySelectorAll("[data-event-user]");
+      let visibleCount = 0;
+
+      // Show/hide events based on filter
+      eventElements.forEach((element) => {
+        const eventUser = element.getAttribute("data-event-user");
+        const matchesPerson = !selectedPerson || eventUser === selectedPerson;
+
+        if (matchesPerson) {
+          (element as HTMLElement).style.display = "";
+          visibleCount++;
+        } else {
+          (element as HTMLElement).style.display = "none";
+        }
+      });
+
+      // Update counter
+      if (visibleEventsCount) {
+        visibleEventsCount.textContent = visibleCount.toString();
+      }
+
+      // Show/hide stats based on whether a filter is applied
+      if (filterStats) {
+        if (selectedPerson) {
+          filterStats.classList.remove("hidden");
+        } else {
+          filterStats.classList.add("hidden");
+        }
+      }
+
+      // Update day cells to reflect filtered status
+      updateDayCellIndicators(selectedPerson);
+    }
+
+    // Function to update day cell indicators based on filter
+    function updateDayCellIndicators(selectedPerson: string) {
+      const dayCells = document.querySelectorAll("[data-date]");
+
+      dayCells.forEach((cell) => {
+        const indicators = cell.querySelectorAll("[title]");
+        const events = cell.querySelectorAll("[data-event-user]");
+
+        // Check if there are any visible events in this cell after filtering
+        let hasVisibleApproved = false;
+        let hasVisiblePending = false;
+
+        events.forEach((event) => {
+          const eventUser = event.getAttribute("data-event-user");
+          const matchesPerson = !selectedPerson || eventUser === selectedPerson;
+          const isVisible = matchesPerson;
+          const eventStyle = (event as HTMLElement).style.display !== "none";
+
+          if (isVisible && eventStyle) {
+            const eventType = event.classList.contains(
+              "bg-status-approved-light"
+            )
+              ? "approved"
+              : "pending";
+            if (eventType === "approved") hasVisibleApproved = true;
+            if (eventType === "pending") hasVisiblePending = true;
+          }
+        });
+
+        // Update indicator visibility
+        indicators.forEach((indicator) => {
+          const indicatorType = indicator.getAttribute("title");
+
+          if (indicatorType === "Approved vacation") {
+            (indicator as HTMLElement).style.display = hasVisibleApproved
+              ? ""
+              : "none";
+          } else if (indicatorType === "Pending approval") {
+            (indicator as HTMLElement).style.display = hasVisiblePending
+              ? ""
+              : "none";
+          }
+          // Keep holiday indicators visible regardless of filtering
+        });
+      });
+    }
+  }
+</script>

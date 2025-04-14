@@ -1,0 +1,212 @@
+---
+interface Props {
+  id: string;
+  title?: string;
+  size?: "sm" | "md" | "lg" | "xl" | "full";
+  showHeader?: boolean;
+  showFooter?: boolean;
+  class?: string;
+}
+
+const {
+  id,
+  title,
+  size = "md",
+  showHeader = true,
+  showFooter = true,
+  class: className = "",
+} = Astro.props;
+
+// Size classes
+const sizeClasses = {
+  sm: "max-w-sm",
+  md: "max-w-md",
+  lg: "max-w-lg",
+  xl: "max-w-xl",
+  full: "max-w-full",
+};
+
+const dialogClasses = [
+  "relative w-full transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all",
+  sizeClasses[size],
+  className,
+].join(" ");
+---
+
+<div
+  id={id}
+  class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm h-full w-full flex items-center justify-center p-4 modal-container hidden"
+  aria-labelledby={`${id}-title`}
+  role="dialog"
+  aria-modal="true"
+  tabindex="-1"
+>
+  <div class="modal-overlay absolute inset-0"></div>
+
+  <div
+    class="relative w-full mx-auto modal-content-wrapper flex items-center justify-center"
+  >
+    <div class={dialogClasses}>
+      {
+        showHeader && (
+          <div class="flex items-center justify-between pb-3 border-b">
+            {title && (
+              <h3 id={`${id}-title`} class="text-lg font-medium text-gray-900">
+                {title}
+              </h3>
+            )}
+            <button
+              type="button"
+              class="text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 rounded-full p-1 transition-colors"
+              data-modal-close
+              aria-label="Close"
+            >
+              <svg
+                class="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+        )
+      }
+
+      <div class={`${showHeader ? "mt-4" : ""}`}>
+        <slot />
+      </div>
+
+      {
+        showFooter && (
+          <div class="mt-5 flex justify-end gap-3 pt-4 border-t">
+            <slot name="footer" />
+          </div>
+        )
+      }
+    </div>
+  </div>
+</div>
+
+<script define:vars={{ id }}>
+  document.addEventListener("DOMContentLoaded", () => {
+    setupModal(id);
+  });
+
+  document.addEventListener("astro:page-load", () => {
+    setupModal(id);
+  });
+
+  function setupModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+
+    // Handle close button
+    modal.querySelectorAll("[data-modal-close]").forEach((button) => {
+      button.addEventListener("click", () => {
+        closeModal(modalId);
+      });
+    });
+
+    // Handle click outside
+    modal.addEventListener("click", (event) => {
+      // Check if click was directly on the modal container or overlay
+      if (
+        event.target === modal ||
+        event.target.classList.contains("modal-overlay")
+      ) {
+        closeModal(modalId);
+      }
+    });
+
+    // Handle Escape key
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !modal.classList.contains("hidden")) {
+        closeModal(modalId);
+      }
+    });
+  }
+
+  // Define global functions to open and close this modal
+  window[`open${id}`] = () => openModal(id);
+  window[`close${id}`] = () => closeModal(id);
+
+  function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+
+    // Prevent body scroll
+    document.body.style.overflow = "hidden";
+
+    // Show modal with animation
+    modal.classList.remove("hidden");
+
+    // Focus the modal for accessibility
+    modal.focus();
+
+    // Trigger animation
+    setTimeout(() => {
+      modal.classList.add("modal-active");
+    }, 10);
+
+    // Trigger a custom event
+    modal.dispatchEvent(new CustomEvent("modal:opened"));
+  }
+
+  function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+
+    // Trigger closing animation
+    modal.classList.remove("modal-active");
+
+    // Wait for animation to finish before hiding
+    setTimeout(() => {
+      modal.classList.add("hidden");
+      document.body.style.overflow = "";
+
+      // Trigger a custom event
+      modal.dispatchEvent(new CustomEvent("modal:closed"));
+    }, 200);
+  }
+</script>
+
+<style>
+  /* Modal animations */
+  .modal-container {
+    transition: opacity 0.25s ease;
+    opacity: 0;
+  }
+
+  .modal-container.hidden {
+    display: none;
+  }
+
+  .modal-container.modal-active {
+    opacity: 1;
+  }
+
+  .modal-content-wrapper {
+    transition:
+      transform 0.25s ease,
+      opacity 0.25s ease;
+    transform: scale(0.95);
+    opacity: 0;
+  }
+
+  .modal-active .modal-content-wrapper {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  /* Prevent clicks on overlay from propagating to elements beneath */
+  .modal-overlay {
+    pointer-events: auto;
+  }
+</style>

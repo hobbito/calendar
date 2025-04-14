@@ -1,68 +1,48 @@
-# Sistema de Gestión de Vacaciones
+# Astro Starter Kit: Basics
 
-Sistema de calendario para controlar las vacaciones de los trabajadores de la empresa.
+```sh
+pnpm create astro@latest -- --template basics
+```
 
-## Funcionalidades
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/withastro/astro/tree/latest/examples/basics)
+[![Open with CodeSandbox](https://assets.codesandbox.io/github/button-edit-lime.svg)](https://codesandbox.io/p/sandbox/github/withastro/astro/tree/latest/examples/basics)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/withastro/astro?devcontainer_path=.devcontainer/basics/devcontainer.json)
 
-### Gestión de Usuarios
+> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
 
-- Dos roles: Admin y Empleado (pueden tener ambos roles)
-- Perfil simple: email y teléfono
+![just-the-basics](https://github.com/withastro/astro/assets/2244813/a0a5533c-a856-4198-8470-2d67b1d7c554)
 
-### Gestión de Vacaciones
+## 🚀 Project Structure
 
-- Cada usuario tiene asignado un número de días de vacaciones anuales (22 días por defecto)
-- El administrador puede personalizar el número de días para cada empleado
-- Al solicitar vacaciones para un rango de fechas, el sistema muestra los días laborables y festivos incluidos
-- Opción para incluir/excluir fines de semana del cálculo de días de vacaciones
-- Opción para incluir/excluir festivos del cálculo de días de vacaciones
-- Flexibilidad para empleados que trabajan en días festivos o fines de semana
-- El sistema calcula automáticamente los días efectivos según las opciones seleccionadas
-- Seguimiento de días utilizados y disponibles
-- Periodos de vacaciones definidos
-- Alertas sobre políticas (no restricciones obligatorias)
-- Solicitud y aprobación de vacaciones
+Inside of your Astro project, you'll see the following folders and files:
 
-### Calendario
+```text
+/
+├── public/
+│   └── favicon.svg
+├── src/
+│   ├── layouts/
+│   │   └── Layout.astro
+│   └── pages/
+│       └── index.astro
+└── package.json
+```
 
-- Vista mensual única
-- Múltiples calendarios de festivos disponibles (integración con API)
-- El administrador asigna a cada usuario el calendario de festivos que debe seguir
-- Posibilidad de añadir festivos personalizados a cada calendario (festivos locales)
-- El calendario será principalmente una visualización (no interactivo)
-- Botón "Pedir vacaciones" que abrirá un modal para realizar la solicitud
+To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
 
-### Notificaciones
+## 🧞 Commands
 
-- Alertas sobre solicitudes y aprobaciones
+All commands are run from the root of the project, from a terminal:
 
-## Tecnologías
+| Command                   | Action                                           |
+| :------------------------ | :----------------------------------------------- |
+| `pnpm install`             | Installs dependencies                            |
+| `pnpm dev`             | Starts local dev server at `localhost:4321`      |
+| `pnpm build`           | Build your production site to `./dist/`          |
+| `pnpm preview`         | Preview your build locally, before deploying     |
+| `pnpm astro ...`       | Run CLI commands like `astro add`, `astro check` |
+| `pnpm astro -- --help` | Get help using the Astro CLI                     |
 
-### Stack Tecnológico
+## 👀 Want to learn more?
 
-- **Framework**: Astro con islas de interactividad
-- **Gestión de paquetes**: pnpm
-- **Componentes Reactivos**: Utilizaremos islas reactivas para:
-  - Modal de solicitud de vacaciones
-  - Formularios de administración
-  - Navegación entre meses del calendario
-- **Calendario**: Desarrollo propio (no se usarán bibliotecas externas)
-- **Hosting**: Vercel
-- **Base de datos**: Por definir (se buscará una opción gratuita)
-- **API de Festivos**: Integración con API externa para obtener festivos por país/región
-
-### Diseño
-
-- Interfaz limpia y minimalista
-- Diseño responsive para dispositivos móviles
-- Código de colores para diferentes estados (aprobado, pendiente, rechazado)
-
-## Próximos pasos
-
-1. Configuración inicial del proyecto con Astro y pnpm
-2. Definición de modelos de datos
-3. Implementación de autenticación
-4. Desarrollo del componente de calendario
-5. Implementación de la gestión de vacaciones
-6. Configuración de calendarios de festivos
-7. Desarrollo del panel de administración
+Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).

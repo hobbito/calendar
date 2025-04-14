@@ -1,0 +1,189 @@
+---
+import Modal from "../../components/ui/Modal.astro";
+import Button from "../../components/ui/Button.astro";
+import VacationRequestForm from "../forms/VacationRequestForm";
+import { vacationAllocationService } from "../../services/vacation-allocation.service";
+
+// Datos de usuario (en una app real, vendrían de la autenticación)
+const userId = "user1";
+const userName = "John Doe";
+
+// Verificar si el usuario tiene días de vacaciones disponibles
+const hasAvailableDays =
+  vacationAllocationService.getAvailableYears(userId).length > 0;
+
+const modalId = "vacation-request-modal";
+---
+
+<Modal id={modalId} showHeader={false} showFooter={false} size="lg">
+  <div class="mx-auto w-full">
+    <div id="request-form-container" class="max-w-lg mx-auto">
+      {
+        hasAvailableDays ? (
+          <VacationRequestForm
+            userId={userId}
+            userName={userName}
+            onClose={() => {}}
+            onSubmit={() => {}}
+            client:load
+          />
+        ) : (
+          <div class="p-5 bg-white rounded-lg border border-gray-100 shadow-md">
+            <div class="flex justify-between items-center border-b border-gray-100 pb-2.5 mb-5">
+              <h2 class="text-xl font-semibold text-gray-800">
+                Request Time Off
+              </h2>
+              <button
+                data-modal-close
+                class="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 rounded-full p-1"
+              >
+                <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path
+                    fill-rule="evenodd"
+                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div class="py-4 text-center">
+              <svg
+                class="w-12 h-12 mx-auto text-gray-400 mb-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <p class="text-gray-600 mb-4">
+                You don't have any vacation days available for this year.
+              </p>
+              <Button type="button" data-modal-close variant="outline">
+                Close
+              </Button>
+            </div>
+          </div>
+        )
+      }
+    </div>
+
+    <div
+      id="success-message"
+      class="hidden p-5 bg-white rounded-lg border border-gray-100 shadow-md max-w-lg mx-auto text-center"
+    >
+      <div class="flex flex-col items-center justify-center">
+        <div
+          class="w-16 h-16 mb-4 flex items-center justify-center rounded-full bg-green-100"
+        >
+          <svg
+            class="w-10 h-10 text-green-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M5 13l4 4L19 7"></path>
+          </svg>
+        </div>
+        <h3 class="text-lg font-medium text-green-800 mb-2">
+          Request Submitted!
+        </h3>
+        <p class="text-sm text-green-600 mb-4">
+          Your vacation request has been submitted successfully.
+        </p>
+        <Button
+          data-id="success-close-btn"
+          variant="primary"
+          class="bg-green-600 hover:bg-green-700 focus-visible:ring-green-500"
+        >
+          Close
+        </Button>
+      </div>
+    </div>
+  </div>
+</Modal>
+
+<script define:vars={{ modalId }}>
+  // Referencias a funciones para acceso global
+  let showVacationRequestModal;
+  let hideVacationRequestModal;
+  let showSuccessMessage;
+
+  document.addEventListener("DOMContentLoaded", setupVacationModal);
+  document.addEventListener("astro:page-load", setupVacationModal);
+
+  function setupVacationModal() {
+    const modal = document.getElementById(modalId);
+    const successCloseBtn = document.querySelector(
+      "[data-id='success-close-btn']"
+    );
+    const openButtons = document.querySelectorAll("[data-open-modal]");
+
+    // Conectar botones de apertura del modal
+    openButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        window[`open${modalId}`]();
+      });
+    });
+
+    // Conectar botón de cierre del mensaje de éxito
+    if (successCloseBtn) {
+      successCloseBtn.addEventListener("click", () => {
+        window[`close${modalId}`]();
+      });
+    }
+
+    // Exponer funciones al ámbito global
+    window.showVacationRequestModal = () => window[`open${modalId}`]();
+    window.hideVacationRequestModal = () => window[`close${modalId}`]();
+
+    showVacationRequestModal = window.showVacationRequestModal;
+    hideVacationRequestModal = window.hideVacationRequestModal;
+
+    // Mostrar mensaje de éxito tras enviar la solicitud
+    window.showSuccessMessage = () => {
+      const formContainer = document.getElementById("request-form-container");
+      const successMessage = document.getElementById("success-message");
+
+      if (formContainer && successMessage) {
+        formContainer.classList.add("hidden");
+        successMessage.classList.remove("hidden");
+
+        // Cerrar automáticamente después de 3 segundos
+        setTimeout(() => {
+          window[`close${modalId}`]();
+          setTimeout(() => {
+            formContainer.classList.remove("hidden");
+            successMessage.classList.add("hidden");
+          }, 300);
+        }, 3000);
+      }
+    };
+
+    showSuccessMessage = window.showSuccessMessage;
+
+    // Configurar el componente React cuando se abre el modal
+    if (modal) {
+      modal.addEventListener("modal:opened", () => {
+        const vacationForm = document.querySelector("vacation-request-form");
+        if (vacationForm) {
+          vacationForm.onClose = () => window[`close${modalId}`]();
+          vacationForm.onSubmit = (data) => {
+            console.log("Vacation request submitted:", data);
+            window.showSuccessMessage();
+          };
+        }
+      });
+    }
+  }
+</script>

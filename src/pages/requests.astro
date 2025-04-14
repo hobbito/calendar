@@ -1,0 +1,481 @@
+---
+import Layout from "../layouts/Layout.astro";
+import HeaderComponent from "../components/layout/HeaderComponent.astro";
+import Card from "../components/ui/Card.astro";
+import Badge from "../components/ui/Badge.astro";
+import Button from "../components/ui/Button.astro";
+import VacationRequestFormModal from "../components/modals/VacationRequestFormModal.astro";
+import { vacationAllocationService } from "../services/vacation-allocation.service";
+
+// Get current user ID (this would come from authentication in a real app)
+const userId = "user1";
+
+// Get all available years for the user
+const availableYears = vacationAllocationService.getAvailableYears(userId);
+// Add current year even if no allocations exist yet
+const currentYear = new Date().getFullYear();
+if (!availableYears.includes(currentYear)) {
+  availableYears.unshift(currentYear);
+}
+// Sort years in descending order
+availableYears.sort((a, b) => b - a);
+
+const defaultYear = currentYear;
+
+// Get user allocations
+const userAllocations =
+  vacationAllocationService.getAllocationsByUserId(userId);
+
+// Build vacation data by year
+const vacationDataByYear: Record<
+  string,
+  {
+    totalDays: number;
+    usedDays: number;
+    pendingDays: number;
+    remainingDays: number;
+    carryOverDays?: number;
+    expiryDate?: Date;
+  }
+> = {};
+
+userAllocations.forEach((allocation) => {
+  vacationDataByYear[allocation.year] = {
+    totalDays:
+      allocation.remaining +
+      vacationAllocationService.getUserAllocation(userId, allocation.year)
+        .usedDays,
+    usedDays: vacationAllocationService.getUserAllocation(
+      userId,
+      allocation.year
+    ).usedDays,
+    pendingDays: 0, // This would come from pending requests in a real app
+    remainingDays: allocation.remaining,
+    carryOverDays: allocation.carryOverFromPreviousYear,
+    expiryDate: allocation.expiryDate,
+  };
+});
+
+// If no allocation exists for the current year, create an empty one
+if (!vacationDataByYear[currentYear]) {
+  vacationDataByYear[currentYear] = {
+    totalDays: 0,
+    usedDays: 0,
+    pendingDays: 0,
+    remainingDays: 0,
+  };
+}
+
+// Definir tipo de status
+type RequestStatus =
+  | "pending"
+  | "approved"
+  | "default"
+  | "holiday"
+  | "nonworking"
+  | "info";
+
+// Datos de solicitudes (en una app real vendrían de la base de datos)
+const requests = [
+  {
+    id: 1,
+    title: "Summer Vacation",
+    status: "pending" as RequestStatus,
+    startDate: "Jul 15, 2025",
+    endDate: "Jul 20, 2025",
+    days: 5,
+    year: currentYear,
+  },
+  {
+    id: 2,
+    title: "Personal Day",
+    status: "approved" as RequestStatus,
+    startDate: "May 5, 2025",
+    endDate: "May 5, 2025",
+    days: 1,
+    year: currentYear,
+  },
+  {
+    id: 3,
+    title: "Family Event",
+    status: "approved" as RequestStatus,
+    startDate: "Mar 10, 2024",
+    endDate: "Mar 12, 2024",
+    days: 3,
+    year: currentYear - 1,
+  },
+  {
+    id: 4,
+    title: "Christmas Break",
+    status: "approved" as RequestStatus,
+    startDate: "Dec 23, 2024",
+    endDate: "Dec 27, 2024",
+    days: 5,
+    year: currentYear - 1,
+  },
+];
+
+// Filtrar solicitudes por año por defecto
+const filteredRequests = requests.filter((req) => req.year === defaultYear);
+---
+
+<Layout title="My Requests | Vacation Calendar">
+  <HeaderComponent />
+
+  <main
+    class="flex flex-col min-h-[calc(100vh-4rem)] bg-gradient-to-b from-gray-50 to-white"
+  >
+    <div
+      class="max-w-7xl mx-auto w-full flex-grow px-4 py-6 sm:px-6 lg:px-8 flex flex-col gap-6"
+    >
+      <div
+        class="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+      >
+        <div>
+          <h1 class="text-2xl font-bold text-gray-800">My Requests</h1>
+          <p class="mt-1 text-sm text-gray-600">
+            View and manage your time off requests
+          </p>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <!-- Selector de año -->
+          <div>
+            <select
+              id="year-selector"
+              class="text-sm border border-gray-200 rounded-md px-3 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+            >
+              {
+                availableYears.map((year) => (
+                  <option value={year} selected={year === defaultYear}>
+                    {year}
+                  </option>
+                ))
+              }
+            </select>
+          </div>
+
+          <Button
+            variant="primary"
+            size="md"
+            icon="plus"
+            class="self-start md:self-auto shadow-md hover:shadow-lg transition-shadow"
+            data-open-modal
+          >
+            New Request
+          </Button>
+        </div>
+      </div>
+
+      <Card
+        variant="bordered"
+        padding="lg"
+        class="rounded-xl shadow-card bg-white/90 backdrop-blur-sm"
+      >
+        <div class="flex flex-col gap-4">
+          <div
+            class="flex items-center justify-between pb-2 border-b border-gray-100"
+          >
+            <h2 class="text-lg font-semibold text-gray-800">
+              Vacation Balance <span id="year-display">{defaultYear}</span>
+            </h2>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div class="p-4 rounded-lg bg-primary-50 border border-primary-100">
+              <div
+                class="text-xs uppercase tracking-wide text-primary-700 font-medium"
+              >
+                Total Days
+              </div>
+              <div class="mt-1 text-2xl font-bold text-primary-700">
+                <span id="total-days"
+                  >{vacationDataByYear[defaultYear]?.totalDays || 0}</span
+                >
+              </div>
+              <div class="mt-1 text-xs text-primary-600">Annual allocation</div>
+            </div>
+
+            <div class="p-4 rounded-lg bg-primary-50 border border-primary-100">
+              <div
+                class="text-xs uppercase tracking-wide text-primary-700 font-medium"
+              >
+                Available Days
+              </div>
+              <div class="mt-1 text-2xl font-bold text-primary-700">
+                <span id="remaining-days"
+                  >{vacationDataByYear[defaultYear]?.remainingDays || 0}</span
+                >
+              </div>
+              <div class="mt-1 text-xs text-primary-600">Remaining balance</div>
+            </div>
+
+            <div
+              class="p-4 rounded-lg bg-status-approved-light border border-status-approved/20"
+            >
+              <div
+                class="text-xs uppercase tracking-wide text-status-approved-dark font-medium"
+              >
+                Used Days
+              </div>
+              <div class="mt-1 text-2xl font-bold text-status-approved">
+                <span id="used-days"
+                  >{vacationDataByYear[defaultYear]?.usedDays || 0}</span
+                >
+              </div>
+              <div class="mt-1 text-xs text-status-approved-dark">
+                This calendar year
+              </div>
+            </div>
+
+            <div
+              class="p-4 rounded-lg bg-status-pending-light border border-status-pending/20"
+            >
+              <div
+                class="text-xs uppercase tracking-wide text-status-pending-dark font-medium"
+              >
+                Pending Days
+              </div>
+              <div class="mt-1 text-2xl font-bold text-status-pending">
+                <span id="pending-days"
+                  >{vacationDataByYear[defaultYear]?.pendingDays || 0}</span
+                >
+              </div>
+              <div class="mt-1 text-xs text-status-pending-dark">
+                Awaiting approval
+              </div>
+            </div>
+          </div>
+
+          {
+            vacationDataByYear[defaultYear]?.carryOverDays && (
+              <div class="mt-1 flex flex-col text-xs text-primary-600 px-2">
+                <span class="font-medium">
+                  Includes {vacationDataByYear[defaultYear].carryOverDays}{" "}
+                  carryover days from previous year
+                  {vacationDataByYear[defaultYear].expiryDate &&
+                    ` (expires on ${vacationDataByYear[defaultYear].expiryDate.toLocaleDateString()})`}
+                </span>
+              </div>
+            )
+          }
+        </div>
+      </Card>
+
+      <Card
+        variant="bordered"
+        padding="lg"
+        class="rounded-xl shadow-card bg-white/90 backdrop-blur-sm"
+      >
+        <div class="flex flex-col gap-4">
+          <div
+            class="flex items-center justify-between pb-2 border-b border-gray-100"
+          >
+            <h2 class="text-lg font-semibold text-gray-800">
+              Requests for <span id="requests-year-display">{defaultYear}</span>
+            </h2>
+            <div class="flex gap-2">
+              <Button variant="outline" size="sm" class="text-xs bg-white">
+                All
+              </Button>
+              <Button variant="outline" size="sm" class="text-xs bg-white">
+                Pending
+              </Button>
+              <Button variant="outline" size="sm" class="text-xs bg-white">
+                Approved
+              </Button>
+            </div>
+          </div>
+
+          <div class="space-y-4" id="requests-container">
+            {
+              filteredRequests.length > 0 ? (
+                filteredRequests.map((request) => (
+                  <div
+                    class="flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-lg border border-gray-100 bg-white shadow-soft"
+                    data-request-year={request.year}
+                  >
+                    <div class="flex-1">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <h3 class="text-sm font-medium text-gray-900">
+                          {request.title}
+                        </h3>
+                        <Badge variant={request.status} size="sm">
+                          {request.status === "approved"
+                            ? "Approved"
+                            : "Pending"}
+                        </Badge>
+                      </div>
+                      <div class="mt-1 flex items-center gap-2 text-xs text-gray-500">
+                        <span>{request.startDate}</span>
+                        {request.startDate !== request.endDate && (
+                          <>
+                            <span>-</span>
+                            <span>{request.endDate}</span>
+                          </>
+                        )}
+                        <span class="font-medium">
+                          ({request.days} {request.days === 1 ? "day" : "days"})
+                        </span>
+                      </div>
+                    </div>
+                    {request.status === "pending" && (
+                      <div class="flex items-center gap-2 self-end sm:self-auto">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          class="text-xs shadow-sm"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          class="text-xs shadow-sm"
+                        >
+                          Edit
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div class="text-center py-8 text-gray-500">
+                  No vacation requests for {defaultYear}
+                </div>
+              )
+            }
+          </div>
+        </div>
+      </Card>
+    </div>
+  </main>
+
+  <VacationRequestFormModal />
+</Layout>
+
+<script define:vars={{ vacationDataByYear, requests, availableYears, userId }}>
+  // Funcionalidad para cambiar entre años
+  document.addEventListener("DOMContentLoaded", () => {
+    const yearSelector = document.getElementById("year-selector");
+    const yearDisplay = document.getElementById("year-display");
+    const requestsYearDisplay = document.getElementById(
+      "requests-year-display"
+    );
+    const totalDaysElement = document.getElementById("total-days");
+    const remainingDaysElement = document.getElementById("remaining-days");
+    const usedDaysElement = document.getElementById("used-days");
+    const pendingDaysElement = document.getElementById("pending-days");
+    const requestsContainer = document.getElementById("requests-container");
+
+    // Función para actualizar la visualización de datos según el año seleccionado
+    const updateYearData = (year) => {
+      // Actualizar títulos
+      if (yearDisplay) yearDisplay.textContent = year;
+      if (requestsYearDisplay) requestsYearDisplay.textContent = year;
+
+      // Actualizar datos de vacaciones
+      const data = vacationDataByYear[year];
+      if (data) {
+        if (totalDaysElement)
+          totalDaysElement.textContent = data.totalDays.toString();
+        if (remainingDaysElement)
+          remainingDaysElement.textContent = data.remainingDays.toString();
+        if (usedDaysElement)
+          usedDaysElement.textContent = data.usedDays.toString();
+        if (pendingDaysElement)
+          pendingDaysElement.textContent = data.pendingDays.toString();
+      } else {
+        // If no data for this year, set all to 0
+        if (totalDaysElement) totalDaysElement.textContent = "0";
+        if (remainingDaysElement) remainingDaysElement.textContent = "0";
+        if (usedDaysElement) usedDaysElement.textContent = "0";
+        if (pendingDaysElement) pendingDaysElement.textContent = "0";
+      }
+
+      // Filtrar solicitudes por año
+      const filteredRequests = requests.filter(
+        (request) => request.year.toString() === year.toString()
+      );
+
+      // Update the requests container
+      if (requestsContainer) {
+        if (filteredRequests.length === 0) {
+          requestsContainer.innerHTML = `
+            <div class="text-center py-8 text-gray-500">
+              No vacation requests for ${year}
+            </div>
+          `;
+        } else {
+          requestsContainer.innerHTML = filteredRequests
+            .map(
+              (request) => `
+              <div class="flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-lg border border-gray-100 bg-white shadow-soft" data-request-year="${request.year}">
+                <div class="flex-1">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <h3 class="text-sm font-medium text-gray-900">${request.title}</h3>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                      request.status === "approved"
+                        ? "bg-status-approved-light text-status-approved-dark"
+                        : "bg-status-pending-light text-status-pending-dark"
+                    }">
+                      ${request.status === "approved" ? "Approved" : "Pending"}
+                    </span>
+                  </div>
+                  <div class="mt-1 flex items-center gap-2 text-xs text-gray-500">
+                    <span>${request.startDate}</span>
+                    ${
+                      request.startDate !== request.endDate
+                        ? `<span>-</span><span>${request.endDate}</span>`
+                        : ""
+                    }
+                    <span class="font-medium">
+                      (${request.days} ${request.days === 1 ? "day" : "days"})
+                    </span>
+                  </div>
+                </div>
+                ${
+                  request.status === "pending"
+                    ? `<div class="flex items-center gap-2 self-end sm:self-auto">
+                      <button class="inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        Cancel
+                      </button>
+                      <button class="inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        Edit
+                      </button>
+                    </div>`
+                    : ""
+                }
+              </div>
+            `
+            )
+            .join("");
+        }
+      }
+
+      // Display carryover info if available
+      const carryoverContainer = document.getElementById("carryover-info");
+      if (carryoverContainer) {
+        if (data && data.carryOverDays) {
+          carryoverContainer.innerHTML = `
+            <span class="font-medium">
+              Includes ${data.carryOverDays} carryover days from previous year
+              ${data.expiryDate ? ` (expires on ${new Date(data.expiryDate).toLocaleDateString()})` : ""}
+            </span>
+          `;
+          carryoverContainer.style.display = "block";
+        } else {
+          carryoverContainer.style.display = "none";
+        }
+      }
+    };
+
+    // Evento para cambiar de año
+    if (yearSelector) {
+      yearSelector.addEventListener("change", () => {
+        const selectedYear = yearSelector.value;
+        updateYearData(selectedYear);
+      });
+    }
+  });
+</script>

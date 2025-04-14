@@ -1,0 +1,42 @@
+---
+interface Props {
+  variant?: "default" | "bordered" | "elevated";
+  class?: string;
+  padding?: "none" | "sm" | "md" | "lg";
+}
+
+const {
+  variant = "default",
+  padding = "md",
+  class: className = "",
+} = Astro.props;
+
+// Base classes
+const baseClasses = "bg-white rounded-lg";
+
+// Variant classes
+const variantClasses = {
+  default: "bg-white",
+  bordered: "border border-gray-200",
+  elevated: "shadow-sm",
+};
+
+// Padding classes
+const paddingClasses = {
+  none: "p-0",
+  sm: "p-3",
+  md: "p-4",
+  lg: "p-6",
+};
+
+const classes = [
+  baseClasses,
+  variantClasses[variant],
+  paddingClasses[padding],
+  className,
+].join(" ");
+---
+
+<div class={classes}>
+  <slot />
+</div>

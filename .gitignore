@@ -1,10 +1,11 @@
 # build output
 dist/
-.output/
+
+# generated types
+.astro/
 
 # dependencies
 node_modules/
-.pnpm-store/
 
 # logs
 npm-debug.log*
@@ -15,19 +16,12 @@ pnpm-debug.log*
 # environment variables
 .env
 .env.production
-.env.local
-.env.development
 
 # macOS-specific files
 .DS_Store
 
-# vercel
-.vercel/
+# jetbrains setting folder
+.idea/
 
-# typescript
-*.tsbuildinfo
-
-# cache
-.astro/
-.eslintcache
-.stylelintcache 
+.vscode/
+.vercel

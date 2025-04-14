@@ -1,0 +1,95 @@
+---
+interface Option {
+  value: string;
+  label: string;
+}
+
+interface Props {
+  options: Option[];
+  name: string;
+  id?: string;
+  label?: string;
+  placeholder?: string;
+  required?: boolean;
+  disabled?: boolean;
+  class?: string;
+}
+
+const {
+  options,
+  name,
+  id = name,
+  label,
+  placeholder,
+  required = false,
+  disabled = false,
+  class: className = "",
+} = Astro.props;
+
+const selectClasses = [
+  "pl-3 pr-9 py-1.5 text-sm",
+  "border border-gray-300 bg-white rounded-md",
+  "shadow-sm focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500",
+  disabled && "opacity-60 cursor-not-allowed",
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+
+// Extract remaining props excluding those already destructured
+const {
+  options: _,
+  name: __,
+  id: ___,
+  label: ____,
+  placeholder: _____,
+  required: ______,
+  disabled: _______,
+  class: ________,
+  ...rest
+} = Astro.props;
+---
+
+<div class="flex flex-col space-y-1">
+  {
+    label && (
+      <label for={id} class="text-sm font-medium text-gray-700">
+        {label}
+        {required && <span class="text-red-500 ml-0.5">*</span>}
+      </label>
+    )
+  }
+  <div class="relative">
+    <select
+      id={id}
+      name={name}
+      class={selectClasses}
+      required={required}
+      disabled={disabled}
+      {...rest}
+    >
+      {placeholder && <option value="">{placeholder}</option>}
+      {
+        options.map((option) => (
+          <option value={option.value}>{option.label}</option>
+        ))
+      }
+    </select>
+    <div
+      class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500"
+    >
+      <svg
+        class="h-4 w-4"
+        fill="none"
+        viewBox="0 0 20 20"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="1.5"
+          d="M6 8l4 4 4-4"></path>
+      </svg>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,73 @@
+---
+interface Props {
+  variant?: "primary" | "secondary" | "outline" | "ghost";
+  size?: "sm" | "md" | "lg";
+  type?: "button" | "submit" | "reset";
+  disabled?: boolean;
+  class?: string;
+  icon?: string | boolean;
+}
+
+const {
+  variant = "primary",
+  size = "md",
+  type = "button",
+  disabled = false,
+  class: className = "",
+  icon = false,
+} = Astro.props;
+
+// Base classes
+const baseClasses =
+  "inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none";
+
+// Size classes
+const sizeClasses = {
+  sm: "text-xs h-8 px-3",
+  md: "text-sm h-9 px-4",
+  lg: "text-base h-10 px-5",
+};
+
+// Variant classes
+const variantClasses = {
+  primary:
+    "bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-primary-500",
+  secondary:
+    "bg-gray-200 text-gray-900 hover:bg-gray-300 focus-visible:ring-gray-400",
+  outline:
+    "border border-gray-300 text-gray-700 hover:bg-gray-50 focus-visible:ring-gray-400",
+  ghost: "text-gray-700 hover:bg-gray-100 focus-visible:ring-gray-400",
+};
+
+// Icon-only button or with specific icon
+const hasIcon = icon !== false;
+const iconClasses = hasIcon && typeof icon === "boolean" ? "p-0 w-9" : "";
+
+const classes = [
+  baseClasses,
+  sizeClasses[size],
+  variantClasses[variant],
+  iconClasses,
+  className,
+].join(" ");
+---
+
+<button type={type} disabled={disabled} class={classes} {...Astro.props}>
+  {
+    typeof icon === "string" && icon === "plus" && (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="-ml-0.5 mr-2 h-4 w-4"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+      >
+        <path
+          fill-rule="evenodd"
+          d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+          clip-rule="evenodd"
+        />
+      </svg>
+    )
+  }
+  <slot />
+</button>

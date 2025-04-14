@@ -1,0 +1,49 @@
+---
+interface Props {
+  variant?:
+    | "approved"
+    | "pending"
+    | "holiday"
+    | "nonworking"
+    | "default"
+    | "info";
+  size?: "sm" | "md";
+  class?: string;
+}
+
+const { variant = "default", size = "md", class: className = "" } = Astro.props;
+
+// Base classes
+const baseClasses =
+  "inline-flex items-center justify-start rounded-md font-medium border overflow-hidden";
+
+// Size classes
+const sizeClasses = {
+  sm: "text-xs px-1.5 py-0.5 leading-tight",
+  md: "text-sm px-2.5 py-1.5",
+};
+
+// Variant classes
+const variantClasses = {
+  approved:
+    "bg-status-approved-light border-status-approved/20 text-status-approved-dark",
+  pending:
+    "bg-status-pending-light border-status-pending/20 text-status-pending-dark",
+  holiday:
+    "bg-status-holiday-light border-status-holiday/20 text-status-holiday-dark",
+  nonworking: "bg-gray-100 border-gray-200 text-gray-700",
+  default: "bg-gray-100 border-gray-200 text-gray-700",
+  info: "bg-primary-50 border-primary-100 text-primary-700",
+};
+
+const classes = [
+  baseClasses,
+  sizeClasses[size],
+  variantClasses[variant],
+  className,
+].join(" ");
+---
+
+<span class={classes}>
+  <slot />
+</span>

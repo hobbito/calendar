@@ -1,0 +1,105 @@
+---
+interface Props {
+  name: string;
+  id?: string;
+  label?: string;
+  value?: string;
+  min?: string;
+  max?: string;
+  required?: boolean;
+  disabled?: boolean;
+  error?: string;
+  class?: string;
+}
+
+const {
+  name,
+  id = name,
+  label,
+  value = "",
+  min,
+  max,
+  required = false,
+  disabled = false,
+  error,
+  class: className = "",
+} = Astro.props;
+
+const inputClasses = [
+  "block w-full py-1.5 px-3 text-sm",
+  "border border-gray-300 rounded-md",
+  "shadow-sm focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500",
+  error &&
+    "border-red-500 text-red-900 placeholder-red-300 focus:border-red-500 focus:ring-red-500",
+  disabled && "opacity-60 cursor-not-allowed bg-gray-100",
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+
+// Extract remaining props excluding those already destructured
+const {
+  name: _,
+  id: __,
+  label: ___,
+  value: ____,
+  min: _____,
+  max: ______,
+  required: _______,
+  disabled: ________,
+  error: _________,
+  class: __________,
+  ...rest
+} = Astro.props;
+---
+
+<div class="flex flex-col space-y-1">
+  {
+    label && (
+      <label for={id} class="text-sm font-medium text-gray-700">
+        {label}
+        {required && <span class="text-red-500 ml-0.5">*</span>}
+      </label>
+    )
+  }
+  <div class="relative">
+    <input
+      type="date"
+      id={id}
+      name={name}
+      value={value}
+      min={min}
+      max={max}
+      required={required}
+      disabled={disabled}
+      class={inputClasses}
+      aria-invalid={error ? "true" : undefined}
+      aria-describedby={error ? `${id}-error` : undefined}
+      {...rest}
+    />
+    <div
+      class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500"
+    >
+      <svg
+        class="h-4 w-4"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+        ></path>
+      </svg>
+    </div>
+  </div>
+  {
+    error && (
+      <p id={`${id}-error`} class="mt-1 text-sm text-red-600">
+        {error}
+      </p>
+    )
+  }
+</div>

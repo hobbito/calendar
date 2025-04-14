@@ -1,0 +1,85 @@
+---
+interface Props {
+  type?: "text" | "email" | "password" | "number" | "date" | "tel" | "url";
+  name: string;
+  id?: string;
+  label?: string;
+  placeholder?: string;
+  value?: string | number;
+  required?: boolean;
+  disabled?: boolean;
+  error?: string;
+  class?: string;
+}
+
+const {
+  type = "text",
+  name,
+  id = name,
+  label,
+  placeholder = "",
+  value = "",
+  required = false,
+  disabled = false,
+  error,
+  class: className = "",
+} = Astro.props;
+
+const inputClasses = [
+  "block w-full py-1.5 px-3 text-sm",
+  "border border-gray-300 rounded-md",
+  "shadow-sm focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500",
+  error &&
+    "border-red-500 text-red-900 placeholder-red-300 focus:border-red-500 focus:ring-red-500",
+  disabled && "opacity-60 cursor-not-allowed bg-gray-100",
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+
+// Extract remaining props excluding those already destructured
+const {
+  type: _,
+  name: __,
+  id: ___,
+  label: ____,
+  placeholder: _____,
+  value: ______,
+  required: _______,
+  disabled: ________,
+  error: _________,
+  class: __________,
+  ...rest
+} = Astro.props;
+---
+
+<div class="flex flex-col space-y-1">
+  {
+    label && (
+      <label for={id} class="text-sm font-medium text-gray-700">
+        {label}
+        {required && <span class="text-red-500 ml-0.5">*</span>}
+      </label>
+    )
+  }
+  <input
+    type={type}
+    id={id}
+    name={name}
+    value={value}
+    placeholder={placeholder}
+    required={required}
+    disabled={disabled}
+    class={inputClasses}
+    aria-invalid={error ? "true" : undefined}
+    aria-describedby={error ? `${id}-error` : undefined}
+    {...rest}
+  />
+  {
+    error && (
+      <p id={`${id}-error`} class="mt-1 text-sm text-red-600">
+        {error}
+      </p>
+    )
+  }
+</div>
